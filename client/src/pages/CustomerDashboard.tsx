@@ -54,6 +54,11 @@ const calculateCarbonSavings = async (product: Product): Promise<CarbonSavings> 
   // Parse weight as number, default to 1 kg if not specified or invalid
   const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
   
+  console.log('🤖 Gemini AI Calculation:');
+  console.log('Product:', product.product_name);
+  console.log('Weight:', weight, 'kg');
+  console.log('Material:', product.material);
+  
   const prompt = `Calculate the estimated carbon savings from recycling this product:
   
 Product Details:
@@ -133,6 +138,15 @@ const getFallbackCarbonSavings = (product: Product): CarbonSavings => {
   const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
   const factor = materialFactors[product.material.toLowerCase()] || 2.0;
   const carbon_saved_kg = factor * weight;
+  
+  // Debug logging
+  console.log('🔍 Carbon Calculation Debug:');
+  console.log('Product:', product.product_name);
+  console.log('Weight (raw):', product.weight, typeof product.weight);
+  console.log('Weight (parsed):', weight, typeof weight);
+  console.log('Material:', product.material);
+  console.log('Factor:', factor);
+  console.log('Carbon Saved:', carbon_saved_kg);
   
   return {
     carbon_saved_kg: parseFloat(carbon_saved_kg.toFixed(2)),
