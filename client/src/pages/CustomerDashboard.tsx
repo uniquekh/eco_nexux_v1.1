@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { StatsCard } from "@/components/StatsCard";
 import "../styles/dashboard-animations.css";
 import { ProductCard } from "@/components/ProductCard";
@@ -21,10 +20,11 @@ import { Package, Recycle, Truck, DollarSign, Scan, MapPin, Loader2, Plus, X, Aw
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getUserEmail, getUserRole } from './LoginPage';
+import { API_CONFIG } from '@/lib/config';
 
 // ==================== HARDCODED DELETE FUNCTION ====================
 const deleteProductHardcoded = async (rfid: string, userEmail: string) => {
-  const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+  const FASTAPI_BASE = API_CONFIG.FASTAPI_BASE;
   
   try {
     const response = await fetch(
@@ -48,7 +48,7 @@ const deleteProductHardcoded = async (rfid: string, userEmail: string) => {
 
 // ==================== CARBON SAVINGS CALCULATION WITH GEMINI ====================
 const calculateCarbonSavings = async (product: Product): Promise<CarbonSavings> => {
-  const GEMINI_API_KEY = "AIzaSyCObiw1MJMvLh8OfPeYHyFa8AjNLIw-_CQ";
+  const GEMINI_API_KEY = API_CONFIG.GEMINI_API_KEY;
   const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
   
   // Parse weight as number, default to 1 kg if not specified or invalid
@@ -237,6 +237,15 @@ export default function CustomerDashboard() {
   const userEmail = getUserEmail();
   const userRole = getUserRole();
 
+  // Hardcoded delete function
+  const deleteProductHardcoded = async (rfid: string, email: string) => {
+    const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+    const response = await fetch(`${FASTAPI_BASE}/delete_product/${encodeURIComponent(rfid)}?company_email=${encodeURIComponent(email)}`, {
+      method: "DELETE",
+    });
+    return await response.json();
+  };
+
   // Delete product mutation
   const deleteMutation = useMutation({
     mutationFn: async (rfid: string) => {
@@ -268,7 +277,18 @@ export default function CustomerDashboard() {
     queryKey: ["all_products", userEmail],
     queryFn: async () => {
       if (!userEmail) throw new Error("User email not found");
-      return await api.getProductsByEmail(userEmail);
+      
+      // Hardcoded API call
+      const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/get_products_by_email?email=${encodeURIComponent(userEmail)}`);
+      const data = await response.json();
+      
+      console.log('📦 Fetched Products:', data.products?.map((p: any) => ({
+        name: p.product_name,
+        weight: p.weight,
+        material: p.material
+      })));
+      
+      return data;
     },
     enabled: !!userEmail,
   });
@@ -376,8 +396,7 @@ export default function CustomerDashboard() {
       registered_date: string;
     }) => {
       // Hardcoded API call
-      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
-      const response = await fetch(`${FASTAPI_BASE}/calculate-reward/`, {
+      const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/calculate-reward/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -416,8 +435,7 @@ export default function CustomerDashboard() {
       if (!userEmail) throw new Error("User email not found");
       
       // Hardcoded API call
-      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
-      const response = await fetch(`${FASTAPI_BASE}/add_product`, {
+      const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/add_product`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -466,8 +484,7 @@ export default function CustomerDashboard() {
   const handleScanComplete = async (code: string) => {
     try {
       // Hardcoded API call
-      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
-      const response = await fetch(`${FASTAPI_BASE}/product_by_rfid/${encodeURIComponent(code)}`);
+      const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/product_by_rfid/${encodeURIComponent(code)}`);
       const data = await response.json();
       
       if (data.status === "success" && data.product) {
