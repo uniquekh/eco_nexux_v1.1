@@ -1,0 +1,35 @@
+# app:
+#   name: your-app-name
+#   stages:
+#     - name: build
+#       cmd: npm install && npm run build
+#     - name: run  
+#       cmd: npm start
+#   ports:
+#     - port: 3000
+#       http: true
+#   env:
+#     - name: NODE_ENV
+#       value: production
+
+# koyeb.yaml
+app:
+  name: recycling-tracker
+  regions:
+    - fra
+  services:
+    - name: web
+      build:
+        buildCommand: npm install && npm run build
+      run:
+        command: npm start
+      ports:
+        - port: 8000
+          protocol: http
+      env:
+        - key: NODE_ENV
+          value: production
+        - key: VITE_API_URL
+          value: https://api-hack-virid.vercel.app
+      instance:
+        type: nano
