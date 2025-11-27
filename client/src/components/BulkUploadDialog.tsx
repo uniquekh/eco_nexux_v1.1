@@ -156,8 +156,8 @@ import { Progress } from "@/components/ui/progress";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
-import { api } from "@/lib/api";
 import { getUserEmail } from "@/pages/LoginPage";
+import { API_CONFIG } from '@/lib/config';
 
 interface BulkUploadDialogProps {
   trigger?: React.ReactNode;
@@ -175,11 +175,6 @@ export function BulkUploadDialog({ trigger, onSuccess }: BulkUploadDialogProps) 
   const queryClient = useQueryClient();
 
   // ==================== HARDCODED API FUNCTIONS ====================
-  
-  // MongoDB Connection Details (Hardcoded)
-  const MONGO_URI = 'mongodb+srv://new_helper:XwVQOu0PvrvSMx3M@cluster0.wd3ic.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-  const GEMINI_API_KEY = "AIzaSyCObiw1MJMvLh8OfPeYHyFa8AjNLIw-_CQ";
-  const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
 
   // Generate unique RFID (Hardcoded logic from api.py)
   const generateUniqueRFID = () => {
@@ -220,7 +215,7 @@ export function BulkUploadDialog({ trigger, onSuccess }: BulkUploadDialogProps) 
 
     try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_CONFIG.GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -288,7 +283,7 @@ Respond in JSON format: {"category": "...", "material": "..."}`
     };
 
     // Call FastAPI to insert into MongoDB
-    const response = await fetch(`${FASTAPI_BASE}/add_product_company`, {
+    const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/add_product_company`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newProduct)
