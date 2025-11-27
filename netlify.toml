@@ -9,6 +9,15 @@
   
   # Functions directory for serverless backend
   functions = "netlify/functions"
+  
+  # Ignore Python requirements.txt - this is a Node.js project
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
+
+[build.environment]
+  # Specify Node.js version
+  NODE_VERSION = "20"
+  # Skip Python dependency installation
+  PYTHON_VERSION = ""
 
 # Redirect API calls to serverless function
 [[redirects]]
