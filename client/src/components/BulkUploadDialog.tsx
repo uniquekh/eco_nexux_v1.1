@@ -278,6 +278,7 @@ Respond in JSON format: {"category": "...", "material": "..."}`
       category: productData.category,
       material: productData.material,
       size: productData.size,
+      weight: productData.weight,
       batch_no: productData.batch_no,
       price: productData.price,
       manufacture_date: productData.manufacture_date,
@@ -382,6 +383,7 @@ Respond in JSON format: {"category": "...", "material": "..."}`
             category,
             material,
             size: row.size || "",
+            weight: row.weight || "1",
             batch_no: row.batch_no || row.batchNo || "",
             price: row.price || "0",
             manufacture_date: row.manufacture_date || new Date().toISOString().split('T')[0]
@@ -443,12 +445,12 @@ Respond in JSON format: {"category": "...", "material": "..."}`
   };
 
   const downloadTemplate = () => {
-    const csv = `product_name,category,material,size,batch_no,price,manufacture_date
-Laptop Computer,Electronics,Metal,15 inch,BATCH001,75000,2024-01-15
-Smartphone,Electronics,Glass,6.5 inch,BATCH002,45000,2024-01-20
-Office Chair,Furniture,Plastic,Standard,BATCH003,12000,2024-02-01
-Water Bottle,Household,Plastic,500ml,BATCH004,500,2024-02-05
-Cotton T-Shirt,Clothing,Fabric,Large,BATCH005,800,2024-02-10`;
+    const csv = `product_name,category,material,size,weight,batch_no,price,manufacture_date
+Laptop Computer,Electronics,Metal,15 inch,2.5,BATCH001,75000,2024-01-15
+Smartphone,Electronics,Glass,6.5 inch,0.2,BATCH002,45000,2024-01-20
+Office Chair,Furniture,Plastic,Standard,8.5,BATCH003,12000,2024-02-01
+Water Bottle,Household,Plastic,500ml,0.15,BATCH004,500,2024-02-05
+Cotton T-Shirt,Clothing,Fabric,Large,0.25,BATCH005,800,2024-02-10`;
 
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
