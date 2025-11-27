@@ -47,6 +47,7 @@ export const products = pgTable("products", {
   category: text("category").notNull(),
   material: text("material").notNull(),
   size: text("size"),
+  weight: text("weight"), // Weight in kg for carbon calculation
   batchNo: text("batch_no"),
   companyId: integer("company_id").notNull(), // References users table
   currentStatus: text("current_status").notNull(), // Current lifecycle status
