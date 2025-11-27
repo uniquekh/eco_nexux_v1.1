@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -40,30 +39,72 @@ export function AddProductDialog({ trigger }: AddProductDialogProps) {
     manufacture_date: new Date().toISOString().split("T")[0],
   });
 
-  // No need to set company email - server handles this automatically via session
+  // Hardcoded MongoDB and API details
+  const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+
+  // Generate unique RFID
+  const generateUniqueRFID = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let rfid = '';
+    for (let i = 0; i < 10; i++) {
+      rfid += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return rfid;
+  };
+
+  // Generate Transaction ID
+  const generateTxnId = async (email: string, date: string, rfid: string) => {
+    const data = `${email}|${date}|${rfid}|null`;
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const shortHash = hashHex.substring(0, 16);
+    const dateFormatted = date.replace(/-/g, '');
+    return `TXN-${dateFormatted}-${shortHash}`;
+  };
 
   const createProductMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      console.log("Creating product with company_email:", userEmail);
-      const productData = {
+      const rfid = generateUniqueRFID();
+      const txn = await generateTxnId(
+        userEmail || "",
+        data.manufacture_date,
+        rfid
+      );
+
+      const newProduct = {
+        TXN: txn,
         company_email: userEmail || "",
         product_name: data.product_name,
         category: data.category,
         material: data.material,
         size: data.size,
+        weight: data.weight, // ← Weight included
         batch_no: data.batch_no,
         price: data.price,
-        weight: data.weight,
         manufacture_date: data.manufacture_date,
+        rfid: rfid,
+        created_at: new Date().toISOString(),
+        currentStatus: "Registered"
       };
-      console.log("Product data being sent:", productData);
-      
-      const result = await api.addProductCompany(productData);
-      console.log("Create product result:", result);
-      
-      if (result.status !== "success") {
-        throw new Error(result.detail || result.message || "Failed to create product");
+
+      console.log("📦 Creating product:", newProduct);
+      console.log("⚖️ Weight:", data.weight, typeof data.weight);
+
+      // Direct MongoDB insert via FastAPI
+      const response = await fetch(`${FASTAPI_BASE}/add_product_company`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProduct)
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create product");
       }
+
+      const result = await response.json();
       return result;
     },
     onSuccess: () => {
