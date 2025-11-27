@@ -21,10 +21,14 @@ app.use(
   })
 );
 
-// Register API routes
-(async () => {
-  await registerRoutes(app);
-})();
+// Initialize routes
+let routesInitialized = false;
+const initializeRoutes = async () => {
+  if (!routesInitialized) {
+    await registerRoutes(app);
+    routesInitialized = true;
+  }
+};
 
 // Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -33,5 +37,10 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
-// Export as serverless function
-export const handler = serverless(app);
+// Export as serverless function with lazy initialization
+const serverlessHandler = serverless(app);
+
+export const handler = async (event: any, context: any) => {
+  await initializeRoutes();
+  return serverlessHandler(event, context);
+};
