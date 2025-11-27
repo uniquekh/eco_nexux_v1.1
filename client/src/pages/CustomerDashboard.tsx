@@ -134,8 +134,32 @@ const getFallbackCarbonSavings = (product: Product): CarbonSavings => {
     wood: 1.0          // 1.0 kg CO2 saved per kg of wood
   };
   
-  // Parse weight as number, default to 1 kg if not specified or invalid
-  const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
+  // Estimate weight based on product name/category if not provided
+  const estimateWeight = (): number => {
+    const name = product.product_name?.toLowerCase() || '';
+    const category = product.category?.toLowerCase() || '';
+    
+    // Check product name for common items
+    if (name.includes('laptop') || name.includes('computer')) return 2.5;
+    if (name.includes('phone') || name.includes('mobile')) return 0.2;
+    if (name.includes('tablet')) return 0.5;
+    if (name.includes('chair')) return 8.5;
+    if (name.includes('table') || name.includes('desk')) return 15.0;
+    if (name.includes('bottle')) return 0.15;
+    if (name.includes('bag')) return 0.3;
+    if (name.includes('shirt') || name.includes('cloth')) return 0.25;
+    
+    // Check category
+    if (category.includes('electronic')) return 2.0;
+    if (category.includes('furniture')) return 10.0;
+    if (category.includes('clothing') || category.includes('fabric')) return 0.3;
+    if (category.includes('household')) return 0.5;
+    
+    return 1.0; // Default
+  };
+  
+  // Parse weight as number, or estimate if not provided
+  const weight = product.weight ? parseFloat(product.weight.toString()) : estimateWeight();
   const factor = materialFactors[product.material.toLowerCase()] || 2.0;
   const carbon_saved_kg = factor * weight;
   
@@ -143,15 +167,17 @@ const getFallbackCarbonSavings = (product: Product): CarbonSavings => {
   console.log('🔍 Carbon Calculation Debug:');
   console.log('Product:', product.product_name);
   console.log('Weight (raw):', product.weight, typeof product.weight);
-  console.log('Weight (parsed):', weight, typeof weight);
+  console.log('Weight (parsed/estimated):', weight, typeof weight);
   console.log('Material:', product.material);
   console.log('Factor:', factor);
   console.log('Carbon Saved:', carbon_saved_kg);
   
+  const weightSource = product.weight ? 'actual' : 'estimated';
+  
   return {
     carbon_saved_kg: parseFloat(carbon_saved_kg.toFixed(2)),
     equivalent_trees: parseFloat((carbon_saved_kg / 21).toFixed(2)),
-    explanation: `Recycling ${weight} kg of ${product.material} saves approximately ${carbon_saved_kg.toFixed(2)} kg of CO2 emissions compared to producing new materials.`
+    explanation: `Recycling ${weight} kg (${weightSource}) of ${product.material} saves approximately ${carbon_saved_kg.toFixed(2)} kg of CO2 emissions compared to producing new materials.`
   };
 };
 
@@ -304,7 +330,14 @@ export default function CustomerDashboard() {
       manufacture_date: string;
       registered_date: string;
     }) => {
-      return await api.calculateReward(data);
+      // Hardcoded API call
+      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+      const response = await fetch(`${FASTAPI_BASE}/calculate-reward/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      return await response.json();
     },
     onSuccess: (data: RewardCalculation) => {
       setCalculatedReward(data);
@@ -336,11 +369,20 @@ export default function CustomerDashboard() {
   const addProductMutation = useMutation({
     mutationFn: async (productRfid: string) => {
       if (!userEmail) throw new Error("User email not found");
-      const result = await api.addProduct({
-        email: userEmail,
-        added_at: new Date().toISOString(),
-        product_rfid: productRfid,
+      
+      // Hardcoded API call
+      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+      const response = await fetch(`${FASTAPI_BASE}/add_product`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          added_at: new Date().toISOString(),
+          product_rfid: productRfid,
+        })
       });
+      
+      const result = await response.json();
       if (result.status !== "success") {
         throw new Error(result.detail || result.message || "Failed to add product");
       }
@@ -378,7 +420,10 @@ export default function CustomerDashboard() {
 
   const handleScanComplete = async (code: string) => {
     try {
-      const data = await api.getProductByRfid(code);
+      // Hardcoded API call
+      const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
+      const response = await fetch(`${FASTAPI_BASE}/product_by_rfid/${encodeURIComponent(code)}`);
+      const data = await response.json();
       
       if (data.status === "success" && data.product) {
         // Check if product has already been recycled
