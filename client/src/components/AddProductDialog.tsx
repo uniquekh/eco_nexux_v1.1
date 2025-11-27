@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Loader2 } from "lucide-react";
 import { getUserEmail, getUserRole } from '@/pages/LoginPage';
+import { API_CONFIG, generateUniqueRFID, generateTxnId } from '@/lib/config';
 
 interface AddProductDialogProps {
   trigger?: React.ReactNode;
@@ -38,32 +39,6 @@ export function AddProductDialog({ trigger }: AddProductDialogProps) {
     weight: "",
     manufacture_date: new Date().toISOString().split("T")[0],
   });
-
-  // Hardcoded MongoDB and API details
-  const FASTAPI_BASE = "https://api-hack-virid.vercel.app";
-
-  // Generate unique RFID
-  const generateUniqueRFID = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let rfid = '';
-    for (let i = 0; i < 10; i++) {
-      rfid += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return rfid;
-  };
-
-  // Generate Transaction ID
-  const generateTxnId = async (email: string, date: string, rfid: string) => {
-    const data = `${email}|${date}|${rfid}|null`;
-    const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-    const shortHash = hashHex.substring(0, 16);
-    const dateFormatted = date.replace(/-/g, '');
-    return `TXN-${dateFormatted}-${shortHash}`;
-  };
 
   const createProductMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -94,7 +69,7 @@ export function AddProductDialog({ trigger }: AddProductDialogProps) {
       console.log("⚖️ Weight:", data.weight, typeof data.weight);
 
       // Direct MongoDB insert via FastAPI
-      const response = await fetch(`${FASTAPI_BASE}/add_product_company`, {
+      const response = await fetch(`${API_CONFIG.FASTAPI_BASE}/add_product_company`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newProduct)
