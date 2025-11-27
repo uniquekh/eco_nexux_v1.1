@@ -51,7 +51,8 @@ const calculateCarbonSavings = async (product: Product): Promise<CarbonSavings> 
   const GEMINI_API_KEY = "AIzaSyCObiw1MJMvLh8OfPeYHyFa8AjNLIw-_CQ";
   const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
   
-  const weight = product.weight || 1; // Default to 1 kg if not specified
+  // Parse weight as number, default to 1 kg if not specified or invalid
+  const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
   
   const prompt = `Calculate the estimated carbon savings from recycling this product:
   
@@ -128,7 +129,8 @@ const getFallbackCarbonSavings = (product: Product): CarbonSavings => {
     wood: 1.0          // 1.0 kg CO2 saved per kg of wood
   };
   
-  const weight = product.weight || 1; // Default to 1 kg if not specified
+  // Parse weight as number, default to 1 kg if not specified or invalid
+  const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
   const factor = materialFactors[product.material.toLowerCase()] || 2.0;
   const carbon_saved_kg = factor * weight;
   
@@ -267,7 +269,8 @@ export default function CustomerDashboard() {
       fabric: 1.5,
       wood: 1.0
     };
-    const weight = product.weight || 1; // Default to 1 kg if not specified
+    // Parse weight as number, default to 1 kg if not specified or invalid
+    const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
     const factor = materialFactors[product.material.toLowerCase()] || 2.0;
     return sum + (factor * weight);
   }, 0);
