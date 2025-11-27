@@ -287,6 +287,14 @@ export default function CustomerDashboard() {
   const collectedProducts = products.filter(p => 
     p.currentStatus === "Collected" || p.currentStatus === "Processing" || p.currentStatus === "Recycled"
   );
+  
+  // Debug: Log collected products with weight
+  console.log('📊 Collected Products for Carbon Calculation:', collectedProducts.map(p => ({
+    name: p.product_name,
+    weight: p.weight,
+    material: p.material,
+    status: p.currentStatus
+  })));
 
   // Calculate rewards: only from collected products (completed recycling)
   const earnedRewards = collectedProducts.reduce((sum, product) => {
@@ -309,10 +317,47 @@ export default function CustomerDashboard() {
       fabric: 1.5,
       wood: 1.0
     };
-    // Parse weight as number, default to 1 kg if not specified or invalid
-    const weight = product.weight ? parseFloat(product.weight.toString()) : 1;
+    
+    // Estimate weight based on product name/category if not provided
+    const estimateWeight = (): number => {
+      const name = product.product_name?.toLowerCase() || '';
+      const category = product.category?.toLowerCase() || '';
+      
+      // Check product name for common items
+      if (name.includes('laptop') || name.includes('computer')) return 2.5;
+      if (name.includes('phone') || name.includes('mobile')) return 0.2;
+      if (name.includes('tablet')) return 0.5;
+      if (name.includes('chair')) return 8.5;
+      if (name.includes('table') || name.includes('desk')) return 15.0;
+      if (name.includes('bottle')) return 0.15;
+      if (name.includes('bag')) return 0.3;
+      if (name.includes('shirt') || name.includes('cloth')) return 0.25;
+      
+      // Check category
+      if (category.includes('electronic')) return 2.0;
+      if (category.includes('furniture')) return 10.0;
+      if (category.includes('clothing') || category.includes('fabric')) return 0.3;
+      if (category.includes('household')) return 0.5;
+      
+      return 1.0; // Default
+    };
+    
+    // Parse weight as number, or estimate if not provided
+    const weight = product.weight ? parseFloat(product.weight.toString()) : estimateWeight();
     const factor = materialFactors[product.material.toLowerCase()] || 2.0;
-    return sum + (factor * weight);
+    const carbonSaved = factor * weight;
+    
+    console.log('💚 Total Carbon Calculation:', {
+      product: product.product_name,
+      weight_raw: product.weight,
+      weight_parsed: weight,
+      material: product.material,
+      factor: factor,
+      carbonSaved: carbonSaved,
+      runningTotal: sum + carbonSaved
+    });
+    
+    return sum + carbonSaved;
   }, 0);
 
   const stats: Stats = {
